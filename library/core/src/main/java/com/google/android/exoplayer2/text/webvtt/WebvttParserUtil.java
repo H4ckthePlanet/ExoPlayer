@@ -51,8 +51,21 @@ public final class WebvttParserUtil {
    * @param input The input from which the line should be read.
    */
   public static boolean isWebvttHeaderLine(ParsableByteArray input) {
-    String line = input.readLine();
-    return line != null && line.startsWith(WEBVTT_HEADER);
+    boolean isValidHeader = false;
+    @Nullable String line = input.readString(WEBVTT_HEADER.length());
+    if (line.equals(WEBVTT_HEADER)) {
+      if (input.bytesLeft() > 0) {
+        int terminator = input.peekUnsignedByte();
+        // Work around termination sequence other than a newline for the WEBVTT header (eg \t)
+        if (terminator == 0x09 || terminator == 0x0a || terminator == 0x0d) {
+          input.skipBytes(1);
+          isValidHeader = true;
+        }
+      } else {
+        isValidHeader = true;
+      }
+    }
+    return isValidHeader;
   }
 
   /**
